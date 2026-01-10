@@ -5,3 +5,5 @@ Gemfile.lock
 _site
 images/*.svg
 images/*.bkp
+
+target/
