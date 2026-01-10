@@ -9,8 +9,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-const AGENT_SERVER: &str = "10.0.0.1:12345";
-const KEYWORD: &[u8] = b"TASK-001 demo";
+const AGENT_SERVER: &str = "10.0.0.3:12345";
+const KEYWORD: &[u8] = b"TASK-CLI cheetah";
 
 // Timeouts prevent the program from hanging forever if the server is unresponsive
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
