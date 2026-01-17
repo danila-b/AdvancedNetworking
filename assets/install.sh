@@ -484,7 +484,7 @@ install_system_dependencies() {
                 "python3-devel"        # Python development headers
                 "python3-pexpect"      # Python pexpect library
                 "python3-setuptools"   # Python setup tools
-                "python3-venv"         # Python virtual environment
+                "python3-virtualenv"   # Python virtual environment
             )
 
             local -a redhat_networking=(
