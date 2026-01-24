@@ -1,7 +1,3 @@
-/*  TCP server that handles incoming connections and sends requested bytes.
-    Each client is handled in a separate async task using Tokio.
- */
-
 use std::error::Error;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -17,7 +13,7 @@ use tokio::{
 // Timeout for connecting to and sending message to adnet-agent server
 const AGENT_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 // Timeout for handling each client connection
-const CLIENT_HANDLE_TIMEOUT: Duration = Duration::from_secs(30);
+const CLIENT_HANDLE_TIMEOUT: Duration = Duration::from_secs(120);
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -45,7 +41,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let args = Args::parse();
 
-    // Validate port range
+    // Some light static validation for the port range
     if args.port < 1024 || args.port > 49151 {
         return Err("Port must be between 1024 and 49151".into());
     }
@@ -59,7 +55,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Send control message to adnet-agent server
     let control_message = format!("TASK-SRV {} {}:{}", args.keyword, args.ip, args.port);
     println!("Connecting to agent server at {}...", args.agent);
-    
     let control_message_result = time::timeout(AGENT_CONNECT_TIMEOUT, send_control_message(&args.agent, &control_message)).await;
     match control_message_result {
         Ok(Ok(_)) => {
@@ -73,12 +68,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    // Our TCP server loop
     loop {
-        // Wait until new connection request comes in
         let (socket, address) = server.accept().await?;
         println!("Accepting connection from {}", address);
 
-        // Spawn a new tokio task to handle communication with the client with a timeout.
         task::spawn(async move {
             match time::timeout(CLIENT_HANDLE_TIMEOUT, process_client(socket, address)).await {
                 Ok(_) => {
@@ -103,7 +97,7 @@ async fn send_control_message(agent: &str, control_message: &str) -> Result<(), 
 /// Handles communication with a single client connection.
 ///
 /// Reads 5-byte requests (4 bytes for length, 1 byte for value) and sends the requested number of bytes. 
-/// Continues until the client closes the connection (so can hang unless the timeout is set on the caller side).
+/// Continues until the client closes the connection (so can hang unless the timeout is set on the caller side, which we do in the main function).
 async fn process_client(mut socket: TcpStream, address: SocketAddr) {
     loop {
         let mut length_bytes = [0u8; 4];
