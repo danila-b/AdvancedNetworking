@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 const INITIAL_RTO_MS: f64 = 1000.0;
-const MIN_RTO_MS: f64 = 200.0;
+const MIN_RTO_MS: f64 = 500.0;
 const MAX_RTO_MS: f64 = 10000.0;
 
 pub struct RttEstimator {
