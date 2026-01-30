@@ -1,6 +1,6 @@
 const INITIAL_CWND: f64 = 2.0;
 const MIN_CWND: f64 = 1.0;
-const MAX_CWND: f64 = 30.0;
+const MAX_CWND: f64 = 50.0;
 
 pub struct CongestionControl {
     cwnd: f64
