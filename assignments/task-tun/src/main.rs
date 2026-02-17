@@ -1,7 +1,7 @@
 mod packet;
 
 use clap::Parser;
-use etherparse::{InternetSlice, IpPayloadSlice, SlicedPacket, TransportSlice};
+use etherparse::{InternetSlice, SlicedPacket};
 use mio::{net::UdpSocket, unix::SourceFd, Events, Interest, Poll, Token};
 use std::io::{Read, Write};
 use std::net::{Ipv4Addr, SocketAddr};
@@ -91,20 +91,21 @@ fn handle_tun_event(
         return Ok(());
     }
 
+
     let mut drop_packet = false;
     let mut duplicate = false;
 
     match SlicedPacket::from_ip(&buf[..n]) {
         Ok(sliced) => {
-            print_packet_info(&sliced, n);
+            packet::print_packet_info(&sliced, n);
 
             if let Some(InternetSlice::Ipv4(ipv4)) = sliced.net {
                 let payload = ipv4.payload();
 
-                if you_shall_not_pass(TAYLOR, payload) {
+                if packet::you_shall_not_pass(TAYLOR, payload) {
                     println!("Packet from TUN contains 'taylor', dropping");
                     drop_packet = true;
-                } else if you_shall_not_pass(ELVIS, payload) {
+                } else if packet::you_shall_not_pass(ELVIS, payload) {
                     println!("Packet from TUN contains 'elvis', duplicating");
                     duplicate = true;
                 }
@@ -119,6 +120,8 @@ fn handle_tun_event(
         // Do not forward
         return Ok(());
     }
+
+    packet::encrypt(&mut buf);
 
     if duplicate {
         socket.send_to(&buf[..n], udp_dest)?;
@@ -139,15 +142,17 @@ fn handle_socket_event(dev: &mut tun::Device, socket: &mut UdpSocket) -> std::io
         return Ok(());
     }
 
+    packet::decrypt(&mut buf);
+
     let mut drop_packet = false;
 
     match SlicedPacket::from_ip(&buf[..n]) {
         Ok(sliced) => {
-            print_packet_info(&sliced, n);
+            packet::print_packet_info(&sliced, n);
 
             if let Some(InternetSlice::Ipv4(ipv4)) = sliced.net {
                 let payload = ipv4.payload();
-                if you_shall_not_pass(TAYLOR, payload) {
+                if packet::you_shall_not_pass(TAYLOR, payload) {
                     println!("Packet from UDP socket contains 'taylor', dropping");
                     drop_packet = true;
                 }
@@ -165,44 +170,3 @@ fn handle_socket_event(dev: &mut tun::Device, socket: &mut UdpSocket) -> std::io
     Ok(())
 }
 
-fn print_packet_info(sliced: &SlicedPacket, n: usize) {
-    if let Some(InternetSlice::Ipv4(ipv4)) = &sliced.net {
-        // Use the IPv4 header slice to access destination and protocol
-        let header = ipv4.header();
-        let dst = header.destination_addr();
-        let proto = header.protocol();
-
-        match &sliced.transport {
-            Some(TransportSlice::Udp(udp)) => {
-                println!(
-                    "dst_ip={:?} proto={:?} dst_port={:?} len={:?}",
-                    dst,
-                    proto,
-                    udp.destination_port(),
-                    n
-                );
-            }
-            Some(TransportSlice::Tcp(tcp)) => {
-                println!(
-                    "dst_ip={:?} proto={:?} dst_port={:?} len={:?}",
-                    dst,
-                    proto,
-                    tcp.destination_port(),
-                    n
-                );
-            }
-            _ => {
-                println!("dst_ip={:?} proto={:?} len={:?}", dst, proto, n);
-            }
-        }
-    } else {
-        println!("Non-IPv4 packet over tunnel");
-    }
-}
-
-fn you_shall_not_pass(you: &[u8], payload: &IpPayloadSlice) -> bool {
-    payload
-        .payload
-        .windows(you.len())
-        .any(|window| window.eq_ignore_ascii_case(you))
-}
