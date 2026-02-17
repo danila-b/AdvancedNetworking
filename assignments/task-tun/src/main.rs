@@ -19,10 +19,10 @@ struct Args {
     #[arg(short, long)]
     destination: Ipv4Addr,
 
-    #[arg(short='b', long)]
+    #[arg(short = 'b', long)]
     udpbind: SocketAddr,
 
-    #[arg(short='u', long)]
+    #[arg(short = 'u', long)]
     udpdest: SocketAddr,
 }
 
@@ -163,8 +163,6 @@ fn handle_socket_event(dev: &mut tun::Device, socket: &mut UdpSocket) -> std::io
     Ok(())
 }
 
-
-
 fn print_packet_info(sliced: &SlicedPacket, n: usize) {
     if let Some(InternetSlice::Ipv4(ipv4)) = &sliced.net {
         // Use the IPv4 header slice to access destination and protocol
@@ -200,6 +198,9 @@ fn print_packet_info(sliced: &SlicedPacket, n: usize) {
     }
 }
 
-fn you_shall_not_pass(you: &[u8], payload: &IpPayloadSlice) -> bool  {
-    payload.payload.windows(you.len()).any(|window| window.eq_ignore_ascii_case(you))
+fn you_shall_not_pass(you: &[u8], payload: &IpPayloadSlice) -> bool {
+    payload
+        .payload
+        .windows(you.len())
+        .any(|window| window.eq_ignore_ascii_case(you))
 }
