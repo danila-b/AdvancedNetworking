@@ -1,8 +1,3 @@
-//! UDP Data Transfer Client
-//!
-//! Implementation using adaptive congestion control (AIMD with slow start)
-//! and RTT-based timeout estimation.
-
 mod congestion;
 mod rtt;
 

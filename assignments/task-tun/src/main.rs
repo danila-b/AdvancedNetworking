@@ -1,3 +1,5 @@
+mod packet;
+
 use clap::Parser;
 use etherparse::{InternetSlice, IpPayloadSlice, SlicedPacket, TransportSlice};
 use mio::{net::UdpSocket, unix::SourceFd, Events, Interest, Poll, Token};
