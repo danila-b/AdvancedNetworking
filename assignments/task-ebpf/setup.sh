@@ -15,11 +15,15 @@ ip link set veth0 up
 # Enable IP forwarding
 sysctl -w net.ipv4.ip_forward=1
 
+# Allow forwarding through veth0 (needed if iptables FORWARD policy is DROP, e.g. Docker)
+iptables -I FORWARD -i veth0 -j ACCEPT
+iptables -I FORWARD -o veth0 -j ACCEPT
+
 # Set up NAT masquarading to outgoing traffic
-# (Change the outgoing interface ("ethp0s5") accordingly based on your system, if needed)
+# (Change the outgoing interface accordingly based on your system, if needed)
 nft add table ip nat
 nft add chain ip nat postrouting { type nat hook postrouting priority 100\; }
-nft add rule ip nat postrouting ip saddr 192.168.76.0/24 oif "enp0s5" masquerade
+nft add rule ip nat postrouting ip saddr 192.168.76.0/24 oif "wlp0s20f3" masquerade
 
 # Set up default route to ns1
 ip netns exec ns1 ip route add default via 192.168.76.1
